@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Health Tracker Dashboard{% endblock %}</title>
+    <title>{% block title %}sustains.ai{% endblock %}</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
+
+
 <body>
     <header class="bg-info text-white text-center py-3 mb-4">
-        <h1>Health Tracker Dashboard</h1>
+        <h1>sustains.ai</h1>
         <nav>
             <ul class="nav justify-content-center">
-                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('index') }}">Home</a></li>
-                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('form') }}">Enter Health Data</a></li>
-                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.index') }}">Home</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.form') }}">Enter Finance Data</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
             </ul>
         </nav>
     </header>
