@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Your Finance Dashboard</h2>
+
+    <!-- Table to display the finance data -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Currency</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in all_data %}
+                <tr>
+                    <td>{{ data.date }}</td>
+                    <td>{{ data.category }}</td>
+                    <td>{{ data.amount }}</td>
+                    <td>{{ data.currency }}</td>
+                    <td>{{ data.notes }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Chart.js for finance data -->
+    <canvas id="financeChart" width="400" height="200"></canvas>
+    <script>
+        const ctx = document.getElementById('financeChart').getContext('2d');
+        const financeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ categories|tojson }},
+                datasets: [{
+                    label: 'Amount Spent',
+                    data: {{ amounts|tojson }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock %}
