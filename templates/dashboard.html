@@ -31,27 +31,29 @@
 
     <!-- Chart.js for finance data -->
     <canvas id="financeChart" width="400" height="200"></canvas>
-    <script>
-        const ctx = document.getElementById('financeChart').getContext('2d');
-        const financeChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {{ categories|tojson }},
-                datasets: [{
-                    label: 'Amount Spent',
-                    data: {{ amounts|tojson }},
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+
+<script>
+    const ctx = document.getElementById('financeChart').getContext('2d');
+    const financeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ categories|default([])|tojson }},
+            datasets: [{
+                label: 'Amount Spent',
+                data: {{ amounts|default([])|tojson }},
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-    </script>
+        }
+    });
+</script>
+
 {% endblock %}
