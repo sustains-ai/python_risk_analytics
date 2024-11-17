@@ -108,3 +108,30 @@ def debug():
     if not data:
         return "No data found in FinanceData table."
     return "<br>".join([f"{d.id}, {d.user_id}, {d.date}, {d.category}, {d.amount}, {d.currency}, {d.notes}" for d in data])
+
+
+# Edit Route for finance data
+@bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit(id):
+    # Fetch the expense record to edit
+    expense = FinanceData.query.get_or_404(id)
+
+    # Check if the logged-in user is the owner of this record
+    if expense.user_id != current_user.id:
+        return redirect(url_for('main.dashboard'))
+
+    # Create the form and pre-fill it with existing data
+    form = FinanceDataForm(obj=expense)
+
+    if form.validate_on_submit():
+        expense.date = form.date.data
+        expense.category = form.category.data
+        expense.amount = form.amount.data
+        expense.currency = form.currency.data
+        expense.notes = form.notes.data
+
+        db.session.commit()  # Save changes to the database
+        return redirect(url_for('main.dashboard'))  # Redirect back to the dashboard
+
+    return render_template('form.html', form=form)  # Render the same form template with pre-filled data
