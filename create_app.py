@@ -4,6 +4,7 @@ from flask_pymongo import PyMongo
 from flask_login import LoginManager
 import os
 from itsdangerous import URLSafeTimedSerializer
+from dotenv import load_dotenv
 
 mongo = PyMongo()  # Initialize MongoDB
 login_manager = LoginManager()
@@ -16,9 +17,9 @@ s = URLSafeTimedSerializer(os.environ.get("SECRET_KEY", "your_secret_key"))  # E
 def create_app():
     app = Flask(__name__)
 
-    # Set environment variables for SES credentials
-    os.environ["SES_SMTP_USERNAME"] = "AKIATCKATMDYALCW4HHT"
-    os.environ["SES_SMTP_PASSWORD"] = "BH6TUWdLDPMaEBBNUOkobtBEHxk+IcIUBribxhUmwpN+"
+
+    app.config['MAIL_USERNAME'] = os.getenv('SES_SMTP_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('SES_SMTP_PASSWORD')
 
     # Confirm they are set (for debugging, remove in production)
     print(f"SES SMTP Username: {os.environ.get('SES_SMTP_USERNAME')}")
