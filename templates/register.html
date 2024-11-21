@@ -32,6 +32,19 @@
             {% endif %}
         </div>
 
+        <!-- Confirm Password Field -->
+        <div class="form-group">
+            {{ form.confirm_password.label(class="form-label") }}
+            {{ form.confirm_password(class="form-control") }}
+            {% if form.confirm_password.errors %}
+                <div class="text-danger">
+                    {% for error in form.confirm_password.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
         <button type="submit" class="btn btn-primary btn-block">Register</button>
     </form>
 </div>

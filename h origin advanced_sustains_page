@@ -1,0 +1,47 @@
+[33mcommit 425272f3ec4709f81b30a5d6c7dcbe5f045f7fd1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32madvanced_sustains_page[m[33m)[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Thu Nov 21 10:36:13 2024 +0400
+
+    Fixed issues with user login and adjusted route decorators for Blueprint
+
+[33mcommit 0fb418d00f6e9a9137a32c223379bec408477706[m[33m ([m[1;31morigin/advanced_sustains_page[m[33m)[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sun Nov 17 13:35:24 2024 +0400
+
+    Add database file to repository
+
+[33mcommit d1704871dd2c82e8c934f4f8a03b5fb6bb20084c[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sun Nov 17 12:58:27 2024 +0400
+
+    Updated dashboard layout and added custom Chart.js colors
+
+[33mcommit f86f7d573cd5bc4aea08bb68f2c9400ec8aa890a[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sat Nov 16 18:51:31 2024 +0400
+
+    Update .gitignore and remove unnecessary files from tracking
+
+[33mcommit 4d21a26b91ce9934f879b075cbbfb7ee3bde3202[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sat Nov 16 18:48:49 2024 +0400
+
+    Remove unnecessary files from Git tracking
+
+[33mcommit c780bcee8ab114c13920ad7c3b2c93ccc32e8da0[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sat Nov 16 18:48:04 2024 +0400
+
+    Add .gitignore to exclude unnecessary files
+
+[33mcommit b8544dcaeca10faca4e0b8a9fb27db1720d26253[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sat Nov 16 16:51:41 2024 +0400
+
+    Separated app to create_app, routes and all
+
+[33mcommit edaf46d9121a55d62075896c425556aa2723253e[m
+Author: Arjun C Unni <arjuncrevathi@gmail.com>
+Date:   Sat Nov 16 14:49:01 2024 +0400
+
+    Initial commit

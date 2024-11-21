@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField, DateField, SelectField, TextAreaField, PasswordField
-from wtforms.validators import InputRequired, NumberRange, DataRequired, Email
+from wtforms.validators import InputRequired, NumberRange, DataRequired, Email, EqualTo, Optional
 
 class FinanceDataForm(FlaskForm):
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
@@ -45,11 +45,32 @@ class FinanceDataForm(FlaskForm):
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[InputRequired(), Email()])
     password = PasswordField('Password', validators=[InputRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[InputRequired(), EqualTo('password', message='Passwords must match')])
     submit = SubmitField('Login')
 
 
 class RegisterForm(FlaskForm):
     email = StringField('Email', validators=[InputRequired(), Email()])
     password = PasswordField('Password', validators=[InputRequired()])
-    confirm_password = PasswordField('Confirm Password', validators=[InputRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[InputRequired(), EqualTo('password', message='Passwords must match')])
     submit = SubmitField('Register')
+
+
+class EditProfileForm(FlaskForm):
+    email = StringField('Email', validators=[InputRequired(), Email()])
+    password = PasswordField('Password', validators=[InputRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[InputRequired(), EqualTo('password', message='Passwords must match')])
+    default_currency = SelectField(
+        'Currency',
+        choices=[
+            ('AED', 'AED (د.إ)'),
+            ('INR', 'INR (₹)'),
+            ('USD', 'USD ($)'),
+            ('EUR', 'EUR (€)'),
+            ('GBP', 'GBP (£)'),
+            ('Other', 'Other')
+        ],
+        validators=[InputRequired()],
+        default='AED'
+    )
+    submit = SubmitField('Update Profile')
