@@ -1,19 +1,23 @@
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, render_template, redirect, url_for, request, current_app
 from flask_login import login_user, login_required, logout_user, current_user
-from models import User, FinanceData, db  # Don't forget to import db from models
+from create_app import mongo, login_manager
+from models import User, FinanceData
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import LoginForm, FinanceDataForm
-from flask import current_app
-
+from bson import ObjectId  # For handling MongoDB ObjectId
 
 bp = Blueprint('main', __name__)
 
 # Flask-Login user_loader function
-from create_app import login_manager
-
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        user_data = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+        return User.from_dict(user_data) if user_data else None
+    except Exception as e:
+        current_app.logger.error(f"Error loading user: {e}")
+        return None
+
 
 # Home Route
 @bp.route('/')
@@ -27,16 +31,15 @@ def form():
     form = FinanceDataForm()
     if form.validate_on_submit():
         new_data = FinanceData(
-            user_id=current_user.id,
+            user_id=str(current_user.id),
             date=form.date.data,
             category=form.category.data,
             amount=form.amount.data,
             currency=form.currency.data,
             notes=form.notes.data
         )
-        db.session.add(new_data)
-        db.session.commit()
-        return redirect(url_for('main.dashboard'))  # Correct usage with blueprint
+        mongo.db.finance_data.insert_one(new_data.to_dict())
+        return redirect(url_for('main.dashboard'))
     return render_template('form.html', form=form)
 
 # Register Route
@@ -44,40 +47,43 @@ def form():
 def register():
     form = LoginForm()
     if form.validate_on_submit():
-        existing_user = User.query.filter_by(email=form.email.data).first()
+        existing_user = mongo.db.users.find_one({"email": form.email.data})
         if existing_user:
             return "Email already registered. Please log in or use a different email.", 400
 
         hashed_password = generate_password_hash(form.password.data, method='sha256')
-        new_user = User(email=form.email.data, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('main.login'))  # Correct usage with blueprint
+        new_user = {
+            "email": form.email.data,
+            "password": hashed_password,
+            "default_currency": "AED"
+        }
+        mongo.db.users.insert_one(new_user)
+        return redirect(url_for('main.login'))
     return render_template('register.html', form=form)
 
 
-
-
+# Login Route
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and check_password_hash(user.password, form.password.data):
+        user_data = mongo.db.users.find_one({"email": form.email.data})
+        if user_data and check_password_hash(user_data["password"], form.password.data):
+            user = User.from_dict(user_data)
+            user.id = str(user_data["_id"])  # Assign ObjectId to the user
             login_user(user)
             return redirect(url_for('main.dashboard'))
-        current_app.logger.error("Invalid credentials")
         return "Invalid credentials", 401
-    current_app.logger.error("Form validation failed")
     return render_template('login.html', form=form)
 
 
+# Dashboard Route
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    all_data = FinanceData.query.filter_by(user_id=current_user.id).all()
-    categories = [data.category for data in all_data] if all_data else []
-    amounts = [data.amount for data in all_data] if all_data else []
+    all_data = list(mongo.db.finance_data.find({"user_id": str(current_user.id)}))
+    categories = [data["category"] for data in all_data] if all_data else []
+    amounts = [data["amount"] for data in all_data] if all_data else []
 
     # Debugging
     current_app.logger.debug(f"All Data: {all_data}")
@@ -86,52 +92,52 @@ def dashboard():
 
     return render_template('dashboard.html', all_data=all_data, categories=categories, amounts=amounts)
 
-
-
 # Logout Route
 @bp.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.index'))  # Correct usage with blueprint
+    return redirect(url_for('main.index'))
 
 # Unauthorized Access Route
 @bp.route('/unauthorized')
 def unauthorized():
     return render_template('unauthorized.html'), 401
 
-
+# Debug Route
 @bp.route('/debug')
 def debug():
-    from models import FinanceData
-    data = FinanceData.query.all()
+    data = list(mongo.db.finance_data.find())
     if not data:
-        return "No data found in FinanceData table."
-    return "<br>".join([f"{d.id}, {d.user_id}, {d.date}, {d.category}, {d.amount}, {d.currency}, {d.notes}" for d in data])
+        return "No data found in FinanceData collection."
+    return "<br>".join([f"{d['_id']}, {d['user_id']}, {d['date']}, {d['category']}, {d['amount']}, {d['currency']}, {d['notes']}" for d in data])
 
-
-# Edit Route for finance data
-@bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+# Edit Route for FinanceData
+@bp.route('/edit/<id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
     # Fetch the expense record to edit
-    expense = FinanceData.query.get_or_404(id)
+    expense_data = mongo.db.finance_data.find_one({"_id": ObjectId(id)})
+    if not expense_data:
+        return "Record not found", 404
 
     # Check if the logged-in user is the owner of this record
-    if expense.user_id != current_user.id:
+    if expense_data["user_id"] != str(current_user.id):
         return redirect(url_for('main.dashboard'))
 
     # Create the form and pre-fill it with existing data
+    expense = FinanceData.from_dict(expense_data)
     form = FinanceDataForm(obj=expense)
 
     if form.validate_on_submit():
-        expense.date = form.date.data
-        expense.category = form.category.data
-        expense.amount = form.amount.data
-        expense.currency = form.currency.data
-        expense.notes = form.notes.data
+        updated_data = {
+            "date": form.date.data,
+            "category": form.category.data,
+            "amount": form.amount.data,
+            "currency": form.currency.data,
+            "notes": form.notes.data
+        }
+        mongo.db.finance_data.update_one({"_id": ObjectId(id)}, {"$set": updated_data})
+        return redirect(url_for('main.dashboard'))
 
-        db.session.commit()  # Save changes to the database
-        return redirect(url_for('main.dashboard'))  # Redirect back to the dashboard
-
-    return render_template('form.html', form=form)  # Render the same form template with pre-filled data
+    return render_template('form.html', form=form)

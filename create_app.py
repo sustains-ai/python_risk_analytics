@@ -1,9 +1,9 @@
+import os
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from flask_pymongo import PyMongo
 from flask_login import LoginManager
 
-# Initialize extensions
-db = SQLAlchemy()
+mongo = PyMongo()  # Initialize MongoDB
 login_manager = LoginManager()
 
 def create_app():
@@ -11,18 +11,20 @@ def create_app():
 
     # Configuration
     app.config['SECRET_KEY'] = 'your_secret_key'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance_data.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Initialize extensions with app
-    db.init_app(app)
+    app.config['MONGO_URI'] = os.getenv(
+        'MONGO_URI',
+        'mongodb+srv://arjuncrevathi:Arjun_1987@serverlessinstance0.ppr5qpz.mongodb.net/wealth_ledger?retryWrites=true&w=majority&appName=ServerlessInstance0'
+    )
+
+    # Initialize extensions
+    mongo.init_app(app)
     login_manager.init_app(app)
 
-    # Set the login view
-    login_manager.login_view = "main.login"  # Set the login route in the blueprint
+    # Set login view
+    login_manager.login_view = "main.login"
 
-
-    # Register blueprints (if routes are separated)
+    # Register blueprints
     from routes import bp
     app.register_blueprint(bp)
 
