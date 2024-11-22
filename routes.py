@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, current_app,flash
 from flask_login import login_user, login_required, logout_user, current_user
 from create_app import mongo, login_manager, mail, s
 from models import User, FinanceData
@@ -69,22 +69,37 @@ def login():
 
         current_app.logger.debug(f"Attempting login for email: {email}")
 
+        # Fetch user data from MongoDB
         user_data = mongo.db.users.find_one({"email": email})
         if user_data:
             current_app.logger.debug(f"User found: {user_data}")
+
+            # Check if the password is correct
             if check_password_hash(user_data["password"], password):
-                if not user_data.get('confirmed', False):  # Check if email is confirmed
+
+                # Check if email is confirmed
+                if not user_data.get('confirmed', False):
                     current_app.logger.warning("Email not confirmed")
-                    return "Please confirm your email address first.", 400
+                    flash("Please confirm your email address first.", "warning")
+                    return redirect(url_for('main.login'))
+
+                # Log in the user
                 user = User.from_dict(user_data)
                 user.id = str(user_data["_id"])  # Assign ObjectId to the user
                 login_user(user)
+                flash("Login successful!", "success")
                 return redirect(url_for('main.dashboard'))
-            else:
-                current_app.logger.warning("Invalid password")
+
+            # Invalid password
+            current_app.logger.warning("Invalid password")
+            flash("Invalid email or password. Please try again.", "danger")
         else:
+            # User not found
             current_app.logger.warning("User not found")
-        return "Invalid credentials", 401
+            flash("Invalid email or password. Please try again.", "danger")
+        return redirect(url_for('main.login'))
+
+    # Render login form
     return render_template('login.html', form=form)
 
 
