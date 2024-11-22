@@ -30,7 +30,7 @@ def create_app():
     # MongoDB URI Configuration
     app.config['MONGO_URI'] = os.getenv(
         'MONGO_URI',
-        'mongodb+srv://arjuncrevathi:Arjun_1987@serverlessinstance0.ppr5qpz.mongodb.net/wealth_ledger?retryWrites=true&w=majority&appName=ServerlessInstance0'
+        'mongodb+srv://arjuncrevathi:Arjun_1987@serverlessinstance1.7hwdxjq.mongodb.net/Risk_analytics?retryWrites=true&w=majority'
     )
 
     # Amazon SES SMTP configuration

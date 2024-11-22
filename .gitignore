@@ -11,4 +11,3 @@ venv/
 SMTP_connection.py
 .env
 
-manual_confirming_client.py
