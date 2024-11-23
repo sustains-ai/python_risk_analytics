@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, request, current_app,flash
 from flask_login import login_user, login_required, logout_user, current_user
 from create_app import mongo, login_manager, mail, s
-from models import User, FinanceData
+from models import User, Portfolio,Stock
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import LoginForm, RegisterForm, FinanceDataForm
+from forms import LoginForm, RegisterForm, PortfolioForm,StockForm
 from bson import ObjectId  # For handling MongoDB ObjectId
 from flask_mail import Message
+from datetime import datetime
+
 
 bp = Blueprint('main', __name__)
 
@@ -140,22 +142,46 @@ def send_confirmation_email(user_email):
 
 
 # Dashboard Route
+from bson import ObjectId
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Fetch all finance data for the logged-in user
-    all_data = list(mongo.db.finance_data.find({"user_id": str(current_user.id)}))
+    # Fetch all portfolios for the logged-in user
+    portfolios = list(mongo.db.portfolios.find({"user_id": str(current_user.id)}))
 
-    # Convert `_id` to a string for use in URLs
-    for data in all_data:
-        data['_id'] = str(data['_id'])
+    # Prepare portfolio data with associated stocks
+    portfolio_data = []
+    for portfolio in portfolios:
+        portfolio["_id"] = str(portfolio["_id"])  # Convert portfolio `_id` to string
 
-    # Prepare data for charts
-    categories = [data["category"] for data in all_data] if all_data else []
-    amounts = [data["amount"] for data in all_data] if all_data else []
+        # Convert portfolio ID to ObjectId for querying stocks
+        stocks = list(mongo.db.stocks.find({"portfolio_id": ObjectId(portfolio["_id"])}))
+        for stock in stocks:
+            stock["_id"] = str(stock["_id"])  # Convert stock `_id` to string
+            stock["portfolio_id"] = str(stock["portfolio_id"])  # Convert portfolio_id in stock to string
+            if isinstance(stock["purchase_date"], datetime):
+                stock["purchase_date"] = stock["purchase_date"].date()  # Convert datetime to date
 
-    return render_template('dashboard.html', all_data=all_data, categories=categories, amounts=amounts)
+        # Debugging
+        print(f"Portfolio: {portfolio['name']} (ID: {portfolio['_id']})")
+        print(f"Raw Stocks: {stocks}")
+        portfolio_data.append({"portfolio": portfolio, "stocks": stocks})
 
+    # Prepare data for charts (optional, if needed for analysis)
+    categories = []
+    amounts = []
+    for data in portfolio_data:
+        for stock in data["stocks"]:
+            categories.append(stock["name"])
+            amounts.append(stock["purchase_price"] * stock["quantity"])
+
+    return render_template(
+        "dashboard.html",
+        portfolio_data=portfolio_data,
+        categories=categories,
+        amounts=amounts
+    )
 
 
 # Logout Route
@@ -184,63 +210,88 @@ def debug():
 
 
 # Edit Route for FinanceData
-@bp.route('/edit/<id>', methods=['GET', 'POST'])
+@bp.route('/stock/<stock_id>/edit', methods=['GET', 'POST'])
 @login_required
-def edit(id):
+def edit_stock(stock_id):
     try:
-        # Fetch the expense record to edit
-        expense_data = mongo.db.finance_data.find_one({"_id": ObjectId(id)})
-        if not expense_data:
-            flash("Record not found.", "danger")
+        # Fetch the stock record to edit
+        stock_data = mongo.db.stocks.find_one({"_id": ObjectId(stock_id)})
+        if not stock_data:
+            flash("Stock not found.", "danger")
             return redirect(url_for('main.dashboard'))
 
-        # Check if the logged-in user is the owner of this record
-        if expense_data.get("user_id") != str(current_user.id):
-            flash("Unauthorized access to the record.", "danger")
+        # Check if the logged-in user owns the portfolio associated with the stock
+        portfolio = mongo.db.portfolios.find_one({"_id": ObjectId(stock_data["portfolio_id"])})
+        if not portfolio or portfolio.get("user_id") != str(current_user.id):
+            flash("Unauthorized access to the stock.", "danger")
             return redirect(url_for('main.dashboard'))
 
-        # Pre-fill the form with existing data
-        form = FinanceDataForm(
-            date=expense_data["date"],
-            category=expense_data["category"],
-            amount=expense_data["amount"],
-            currency=expense_data["currency"],
-            notes=expense_data["notes"]
+        # Pre-fill the form with existing stock data
+        form = StockForm(
+            symbol=stock_data["symbol"],
+            name=stock_data["name"],
+            quantity=stock_data["quantity"],
+            purchase_price=stock_data["purchase_price"],
+            purchase_date=stock_data["purchase_date"],
+            currency=stock_data["currency"],
+            notes=stock_data["notes"]
         )
 
-        # Update the record upon form submission
+        # Update the stock record upon form submission
         if form.validate_on_submit():
-            updated_data = {
-                "date": form.date.data,
-                "category": form.category.data,
-                "amount": form.amount.data,
+            updated_stock = {
+                "symbol": form.symbol.data,
+                "name": form.name.data,
+                "quantity": form.quantity.data,
+                "purchase_price": form.purchase_price.data,
+                "purchase_date": form.purchase_date.data,
                 "currency": form.currency.data,
-                "notes": form.notes.data
+                "notes": form.notes.data,
             }
-            mongo.db.finance_data.update_one({"_id": ObjectId(id)}, {"$set": updated_data})
-            flash("Record updated successfully!", "success")
+            mongo.db.stocks.update_one({"_id": ObjectId(stock_id)}, {"$set": updated_stock})
+            flash("Stock updated successfully!", "success")
             return redirect(url_for('main.dashboard'))
 
-        return render_template('form.html', form=form)
+        return render_template("edit_stock.html", form=form, stock_id=stock_id)
 
     except Exception as e:
-        current_app.logger.error(f"Error in edit route: {e}")
-        flash("An error occurred while editing the record.", "danger")
+        current_app.logger.error(f"Error in edit_stock route: {e}")
+        flash("An error occurred while editing the stock.", "danger")
         return redirect(url_for('main.dashboard'))
 
-@bp.route('/form', methods=['GET', 'POST'])
+
+@bp.route('/portfolio/<portfolio_id>/add_stock', methods=['GET', 'POST'])
 @login_required
-def form():
-    form = FinanceDataForm()
+def add_stock(portfolio_id):
+    form = StockForm()
     if form.validate_on_submit():
-        new_data = FinanceData(
-            user_id=str(current_user.id),
-            date=form.date.data,
-            category=form.category.data,
-            amount=form.amount.data,
+        new_stock = Stock(
+            portfolio_id=portfolio_id,
+            symbol=form.symbol.data,
+            name=form.name.data,
+            quantity=form.quantity.data,
+            purchase_price=form.purchase_price.data,
+            purchase_date=form.purchase_date.data,
             currency=form.currency.data,
             notes=form.notes.data
         )
-        mongo.db.finance_data.insert_one(new_data.to_dict())
+        mongo.db.stocks.insert_one(new_stock.to_dict())
+        flash("Stock added successfully!", "success")
         return redirect(url_for('main.dashboard'))
-    return render_template('form.html', form=form)
+    return render_template('add_stock.html', form=form, portfolio_id=portfolio_id)
+@bp.route('/add_portfolio', methods=['GET', 'POST'])
+@login_required
+def add_portfolio():
+    form = PortfolioForm()
+    if form.validate_on_submit():
+        new_portfolio = {
+            "user_id": str(current_user.id),
+            "name": form.name.data,
+            "description": form.description.data,
+            "created_at": datetime.utcnow()
+        }
+        mongo.db.portfolios.insert_one(new_portfolio)
+        flash("Portfolio added successfully!", "success")
+        return redirect(url_for('main.dashboard'))
+
+    return render_template('add_portfolio.html', form=form)

@@ -4,64 +4,66 @@
 
 {% block content %}
 <div class="row">
-    <!-- Left Column: Finance Data Table -->
-    <div class="col-md-6">
-        <h2>Your Finance Dashboard</h2>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Amount</th>
-                    <th>Currency</th>
-                    <th>Notes</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for data in all_data %}
-                    <tr>
-                        <td>{{ data.date }}</td>
-                        <td>{{ data.category }}</td>
-                        <td>{{ data.amount }}</td>
-                        <td>{{ data.currency }}</td>
-                        <td>{{ data.notes }}</td>
-                        <td>
-                            <a href="{{ url_for('main.edit', id=data._id) }}" class="btn btn-warning btn-sm">Edit</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Left Column: Portfolio and Stock Data -->
+    <div class="col-md-12">
+        <h2>Your Portfolio Dashboard</h2>
+        <!-- Loop through each portfolio -->
+        {% for portfolio in portfolio_data %}
+             <pre>{{ portfolio | tojson }}</pre>
+        <div class="card mb-4">
+            <div class="card-header">
+                <pre>{{ portfolio | tojson }}</pre>
+                <h4>Portfolio: {{ portfolio.portfolio.name }}</h4>
+                <p>{{ portfolio.portfolio.description }}</p>
+            </div>
+            <div class="card-body">
+                <h5>Stocks in Portfolio:</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Stock Symbol</th>
+                            <th>Stock Name</th>
+                            <th>Quantity</th>
+                            <th>Purchase Price</th>
+                            <th>Purchase Date</th>
+                            <th>Currency</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in portfolio.stocks %}
+                        <tr>
+                            <td>{{ stock.symbol }}</td>
+                            <td>{{ stock.name }}</td>
+                            <td>{{ stock.quantity }}</td>
+                            <td>{{ stock.purchase_price }}</td>
+                            <td>{{ stock.purchase_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ stock.currency }}</td>
+                            <td>{{ stock.notes }}</td>
+                            <td>
+                                <a href="{{ url_for('main.edit_stock', stock_id=stock._id) }}" class="btn btn-warning btn-sm">Edit</a>
+
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <a href="{{ url_for('main.add_stock', portfolio_id=portfolio.portfolio._id) }}" class="btn btn-primary">Add Stock</a>
+            </div>
+        </div>
+        {% endfor %}
+
+        <a href="{{ url_for('main.add_portfolio') }}" class="btn btn-success mt-3">Add Portfolio</a>
     </div>
+</div>
 
-    <!-- Right Column: Analysis (Charts, Stats) -->
-    <div class="col-md-6">
-        <h2>Analysis</h2>
-
-        <!-- Chart.js Analysis -->
-        <canvas id="financeChart" width="400" height="200"></canvas>
-
-       {% block scripts %}
+{% block scripts %}
 <script>
     const categories = {{ categories|default([])|tojson }};
     const amounts = {{ amounts|default([])|tojson }};
 
-    // Map of categories to custom colors
-    const categoryColors = {
-        "food": "rgba(255, 99, 132, 0.2)",  // Red
-        "transportation": "rgba(54, 162, 235, 0.2)",  // Blue
-        "entertainment": "rgba(255, 206, 86, 0.2)",  // Yellow
-        "utilities": "rgba(75, 192, 192, 0.2)",  // Green
-         "gifts": "rgba(53, 253, 192, 0.2)",  // Green
-        "other": "rgba(153, 102, 255, 0.2)"  // Purple
-    };
-
-
-
-    const backgroundColors = categories.map(category => categoryColors[category] || "rgba(201, 203, 207, 0.2)");
-    const borderColors = categories.map(category => categoryColors[category]?.replace('0.2', '1') || "rgba(201, 203, 207, 1)");
-
+    // Example chart logic; update as needed for portfolio or stock analysis
     const ctx = document.getElementById('financeChart').getContext('2d');
     const financeChart = new Chart(ctx, {
         type: 'bar',
@@ -70,8 +72,8 @@
             datasets: [{
                 label: 'Amount Spent',
                 data: amounts,
-                backgroundColor: backgroundColors,
-                borderColor: borderColors,
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                borderColor: "rgba(75, 192, 192, 1)",
                 borderWidth: 1
             }]
         },
@@ -86,11 +88,8 @@
 </script>
 {% endblock %}
 
-
-        <div class="mt-4">
-            <h5>Future Analysis Coming Here!</h5>
-            <p>Use this section to display more insights and metrics as needed.</p>
-        </div>
-    </div>
-</div>
 {% endblock %}
+
+
+
+

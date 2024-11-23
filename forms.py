@@ -1,30 +1,19 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, DateField, SelectField, TextAreaField, PasswordField
-from wtforms.validators import InputRequired, NumberRange, DataRequired, Email, EqualTo, Optional
+from wtforms import StringField, IntegerField, SubmitField, DateField, SelectField, TextAreaField, PasswordField,FloatField
+from wtforms.validators import InputRequired, NumberRange, DataRequired, Email, EqualTo, Optional, Length
 
-class FinanceDataForm(FlaskForm):
-    date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
-    category = SelectField(
-        'Category',
-        choices=[
-            ('food', 'Food'),
-            ('gifts', 'Gifts'),
-            ('health_medical', 'Health/Medical'),
-            ('home', 'Home'),
-            ('transportation', 'Transportation'),
-            ('personal', 'Personal'),
-            ('pets', 'Pets'),
-            ('utilities', 'Utilities'),
-            ('travel', 'Travel'),
-            ('debt', 'Debt'),
-            ('other', 'Other'),
-            ('custom_1', 'Custom Category 1'),
-            ('custom_2', 'Custom Category 2'),
-            ('custom_3', 'Custom Category 3'),
-        ],
-        validators=[InputRequired()]
-    )
-    amount = IntegerField('Amount (in currency)', validators=[InputRequired(), NumberRange(min=0)])
+class PortfolioForm(FlaskForm):
+    name = StringField('Portfolio Name', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Portfolio Description', validators=[Length(max=500)])
+    submit = SubmitField('Create Portfolio')
+
+
+class StockForm(FlaskForm):
+    symbol = StringField('Stock Symbol', validators=[DataRequired(), Length(max=10)])
+    name = StringField('Stock Name', validators=[DataRequired(), Length(max=100)])
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    purchase_price = FloatField('Purchase Price', validators=[DataRequired(), NumberRange(min=0)])
+    purchase_date = DateField('Purchase Date', format='%Y-%m-%d', validators=[DataRequired()])
     currency = SelectField(
         'Currency',
         choices=[
@@ -35,11 +24,11 @@ class FinanceDataForm(FlaskForm):
             ('GBP', 'GBP (£)'),
             ('Other', 'Other')
         ],
-        validators=[InputRequired()],
-        default='AED'
+        validators=[DataRequired()],
+        default='USD'
     )
-    notes = TextAreaField('Notes', validators=[DataRequired()])
-    submit = SubmitField('Add Expense')
+    notes = TextAreaField('Notes', validators=[Length(max=200)])
+    submit = SubmitField('Add Stock')
 
 
 class LoginForm(FlaskForm):
