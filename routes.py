@@ -143,11 +143,19 @@ def send_confirmation_email(user_email):
 @bp.route('/dashboard')
 @login_required
 def dashboard():
+    # Fetch all finance data for the logged-in user
     all_data = list(mongo.db.finance_data.find({"user_id": str(current_user.id)}))
+
+    # Convert `_id` to a string for use in URLs
+    for data in all_data:
+        data['_id'] = str(data['_id'])
+
+    # Prepare data for charts
     categories = [data["category"] for data in all_data] if all_data else []
     amounts = [data["amount"] for data in all_data] if all_data else []
 
     return render_template('dashboard.html', all_data=all_data, categories=categories, amounts=amounts)
+
 
 
 # Logout Route
@@ -179,31 +187,47 @@ def debug():
 @bp.route('/edit/<id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
-    # Fetch the expense record to edit
-    expense_data = mongo.db.finance_data.find_one({"_id": ObjectId(id)})
-    if not expense_data:
-        return "Record not found", 404
+    try:
+        # Fetch the expense record to edit
+        expense_data = mongo.db.finance_data.find_one({"_id": ObjectId(id)})
+        if not expense_data:
+            flash("Record not found.", "danger")
+            return redirect(url_for('main.dashboard'))
 
-    # Check if the logged-in user is the owner of this record
-    if expense_data["user_id"] != str(current_user.id):
+        # Check if the logged-in user is the owner of this record
+        if expense_data.get("user_id") != str(current_user.id):
+            flash("Unauthorized access to the record.", "danger")
+            return redirect(url_for('main.dashboard'))
+
+        # Pre-fill the form with existing data
+        form = FinanceDataForm(
+            date=expense_data["date"],
+            category=expense_data["category"],
+            amount=expense_data["amount"],
+            currency=expense_data["currency"],
+            notes=expense_data["notes"]
+        )
+
+        # Update the record upon form submission
+        if form.validate_on_submit():
+            updated_data = {
+                "date": form.date.data,
+                "category": form.category.data,
+                "amount": form.amount.data,
+                "currency": form.currency.data,
+                "notes": form.notes.data
+            }
+            mongo.db.finance_data.update_one({"_id": ObjectId(id)}, {"$set": updated_data})
+            flash("Record updated successfully!", "success")
+            return redirect(url_for('main.dashboard'))
+
+        return render_template('form.html', form=form)
+
+    except Exception as e:
+        current_app.logger.error(f"Error in edit route: {e}")
+        flash("An error occurred while editing the record.", "danger")
         return redirect(url_for('main.dashboard'))
 
-    # Create the form and pre-fill it with existing data
-    expense = FinanceData.from_dict(expense_data)
-    form = FinanceDataForm(obj=expense)
-
-    if form.validate_on_submit():
-        updated_data = {
-            "date": form.date.data,
-            "category": form.category.data,
-            "amount": form.amount.data,
-            "currency": form.currency.data,
-            "notes": form.notes.data
-        }
-        mongo.db.finance_data.update_one({"_id": ObjectId(id)}, {"$set": updated_data})
-        return redirect(url_for('main.dashboard'))
-
-    return render_template('form.html', form=form)
 @bp.route('/form', methods=['GET', 'POST'])
 @login_required
 def form():

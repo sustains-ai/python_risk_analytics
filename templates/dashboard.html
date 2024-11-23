@@ -27,7 +27,7 @@
                         <td>{{ data.currency }}</td>
                         <td>{{ data.notes }}</td>
                         <td>
-                            <a href="{{ url_for('main.edit', id=data.id) }}" class="btn btn-warning btn-sm">Edit</a>
+                            <a href="{{ url_for('main.edit', id=data._id) }}" class="btn btn-warning btn-sm">Edit</a>
                         </td>
                     </tr>
                 {% endfor %}
