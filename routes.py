@@ -267,6 +267,7 @@ def add_stock(portfolio_id):
     if form.validate_on_submit():
         new_stock = Stock(
             portfolio_id=portfolio_id,
+            market = form.market.data,
             symbol=form.symbol.data,
             name=form.name.data,
             quantity=form.quantity.data,

@@ -9,6 +9,21 @@ class PortfolioForm(FlaskForm):
 
 
 class StockForm(FlaskForm):
+    market = SelectField(
+        'Market/Country',
+        choices=[
+            ('US', 'United States'),
+            ('IN', 'India'),
+            ('AE', 'United Arab Emirates'),
+            ('EU', 'European Union'),
+            ('UK', 'United Kingdom'),
+            ('JP', 'Japan'),
+            ('CN', 'China'),
+            ('Other', 'Other')
+        ],
+        validators=[DataRequired()],
+        default='US'
+    )
     symbol = StringField('Stock Symbol', validators=[DataRequired(), Length(max=10)])
     name = StringField('Stock Name', validators=[DataRequired(), Length(max=100)])
     quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])

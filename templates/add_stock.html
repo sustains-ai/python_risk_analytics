@@ -8,6 +8,11 @@
     <form method="POST">
         {{ form.hidden_tag() }}
         <div class="form-group">
+            {{ form.market.label(class="form-label") }}
+            {{ form.market(class="form-control") }}
+        </div>
+
+        <div class="form-group">
             {{ form.symbol.label(class="form-label") }}
             {{ form.symbol(class="form-control") }}
         </div>

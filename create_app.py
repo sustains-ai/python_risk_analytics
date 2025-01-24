@@ -28,6 +28,7 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "your_secret_key")
 
     # MongoDB URI Configuration
+    # MongoDB URI Configuration
     app.config['MONGO_URI'] = os.getenv(
         'MONGO_URI',
         'mongodb+srv://sriharshamadamanchi:Harsha1642@database.l2gng.mongodb.net/RiskAnalysis?retryWrites=true&w=majority'
